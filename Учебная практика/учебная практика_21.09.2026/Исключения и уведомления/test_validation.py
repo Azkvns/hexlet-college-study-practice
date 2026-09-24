@@ -6,6 +6,7 @@ from validation import validate_partner
 def _valid_partner(**overrides):
     data = {
         "name": "ООО Тест",
+        "inn": "7700000000",
         "email": "test@example.ru",
         "rating": 0,
     }
@@ -19,6 +20,17 @@ def test_validate_partner_rejects_empty_name():
 
     with pytest.raises(ValueError):
         validate_partner(_valid_partner(name="   "))
+
+
+def test_validate_partner_rejects_empty_inn():
+    with pytest.raises(ValueError):
+        validate_partner(_valid_partner(inn=""))
+
+    with pytest.raises(ValueError):
+        validate_partner(_valid_partner(inn="   "))
+
+    with pytest.raises(ValueError):
+        validate_partner(_valid_partner(inn=None))
 
 
 def test_validate_partner_rejects_empty_email():
@@ -41,5 +53,7 @@ def test_validate_partner_rejects_invalid_rating():
 
 
 def test_validate_partner_accepts_zero_rating_and_nonempty_fields():
-    validate_partner(_valid_partner(name=" Партнёр ", email=" a@b.ru ", rating=0))
+    validate_partner(
+        _valid_partner(name=" Партнёр ", inn=" 7700000000 ", email=" a@b.ru ", rating=0)
+    )
     validate_partner(_valid_partner(rating=11))
