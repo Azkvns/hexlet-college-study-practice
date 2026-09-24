@@ -62,6 +62,15 @@ def is_form_dirty(initial: dict, current: dict) -> bool:
     return initial != current
 
 
+def _strip_placeholder(key: str, value: str) -> str:
+    text = value.strip()
+    if key == "phone" and text == PHONE_PLACEHOLDER:
+        return ""
+    if key == "email" and text == EMAIL_PLACEHOLDER:
+        return ""
+    return text
+
+
 def parse_form_data(raw: dict) -> dict:
     rating_raw = str(raw.get("rating", "")).strip()
     try:
@@ -79,9 +88,9 @@ def parse_form_data(raw: dict) -> dict:
     return {
         "name": str(raw.get("name", "")).strip(),
         "inn": str(raw.get("inn", "")).strip(),
-        "email": str(raw.get("email", "")).strip(),
+        "email": _strip_placeholder("email", str(raw.get("email", ""))),
         "address": str(raw.get("address", "")).strip(),
-        "phone": str(raw.get("phone", "")).strip(),
+        "phone": _strip_placeholder("phone", str(raw.get("phone", ""))),
         "partner_type": str(raw.get("partner_type", "")).strip(),
         "director": str(raw.get("director", "")).strip(),
         "rating": rating,
@@ -118,9 +127,11 @@ class PartnerEditWindow(tk.Toplevel):
             self.iconphoto(True, self._app_icon)
 
         self._entries: dict[str, tk.Variable | ttk.Combobox] = {}
+        self._placeholder_widgets: dict[str, tuple[tk.Entry, str]] = {}
         self._initial_values: dict[str, str] = {}
         self._build_form()
         self._load_partner_if_needed()
+        self._refresh_placeholders()
         self._initial_values = self._current_values()
 
         self.protocol("WM_DELETE_WINDOW", self._on_back)
@@ -163,10 +174,6 @@ class PartnerEditWindow(tk.Toplevel):
                 self._entries[key] = combo
             else:
                 var = tk.StringVar()
-                if key == "phone":
-                    var.set(PHONE_PLACEHOLDER)
-                elif key == "email":
-                    var.set(EMAIL_PLACEHOLDER)
                 entry = tk.Entry(
                     body,
                     textvariable=var,
@@ -177,6 +184,10 @@ class PartnerEditWindow(tk.Toplevel):
                 )
                 entry.grid(row=row, column=1, sticky="ew", pady=4)
                 self._entries[key] = var
+                if key == "phone":
+                    self._attach_placeholder(entry, var, PHONE_PLACEHOLDER)
+                elif key == "email":
+                    self._attach_placeholder(entry, var, EMAIL_PLACEHOLDER)
 
         body.columnconfigure(1, weight=1)
 
@@ -195,6 +206,43 @@ class PartnerEditWindow(tk.Toplevel):
             font=FONT_TITLE,
             command=self._on_save,
         ).pack(side="left")
+
+    def _attach_placeholder(
+        self,
+        entry: tk.Entry,
+        var: tk.StringVar,
+        placeholder: str,
+    ) -> None:
+        """Show hint text in the entry; never treat it as a saved value."""
+        key = "phone" if placeholder == PHONE_PLACEHOLDER else "email"
+        self._placeholder_widgets[key] = (entry, placeholder)
+
+        def show_placeholder() -> None:
+            if not _strip_placeholder(key, var.get()):
+                var.set(placeholder)
+                entry.configure(fg="#808080")
+
+        def on_focus_in(_event=None) -> None:
+            if var.get() == placeholder:
+                var.set("")
+                entry.configure(fg=FG_COLOR)
+
+        def on_focus_out(_event=None) -> None:
+            show_placeholder()
+
+        entry.bind("<FocusIn>", on_focus_in)
+        entry.bind("<FocusOut>", on_focus_out)
+
+    def _refresh_placeholders(self) -> None:
+        for key, (entry, placeholder) in self._placeholder_widgets.items():
+            var = self._entries[key]
+            assert isinstance(var, tk.StringVar)
+            current = var.get().strip()
+            if not current or current == placeholder:
+                var.set(placeholder)
+                entry.configure(fg="#808080")
+            else:
+                entry.configure(fg=FG_COLOR)
 
     def _load_partner_if_needed(self) -> None:
         if self.partner_id is None:
@@ -246,7 +294,7 @@ class PartnerEditWindow(tk.Toplevel):
             if isinstance(widget, ttk.Combobox):
                 result[key] = widget.get()
             else:
-                result[key] = widget.get()
+                result[key] = _strip_placeholder(key, widget.get())
         return result
 
     def _on_back(self) -> None:
