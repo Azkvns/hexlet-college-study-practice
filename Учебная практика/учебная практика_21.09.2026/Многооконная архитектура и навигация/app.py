@@ -92,14 +92,16 @@ class MainWindow(tk.Tk):
 
         icon_path = RESOURCES_DIR / "app_icon.png"
         logo_path = RESOURCES_DIR / "logo.png"
-        self._app_icon = _load_photo(icon_path)
-        self.iconphoto(True, self._app_icon)
-        self._logo = _load_photo(logo_path)
+        if icon_path.exists():
+            self._app_icon = _load_photo(icon_path)
+            self.iconphoto(True, self._app_icon)
+        self._logo = _load_photo(logo_path) if logo_path.exists() else None
 
         header = tk.Frame(self, bg=BG_COLOR)
         header.pack(fill="x", padx=16, pady=(16, 8))
 
-        tk.Label(header, image=self._logo, bg=BG_COLOR).pack(side="left")
+        if self._logo is not None:
+            tk.Label(header, image=self._logo, bg=BG_COLOR).pack(side="left")
         tk.Label(
             header,
             text=MAIN_TITLE,

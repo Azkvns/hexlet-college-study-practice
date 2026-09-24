@@ -22,6 +22,8 @@ LINE_PADY = 0
 
 
 def _load_photo(path: Path) -> tk.PhotoImage:
+    if not path.exists():
+        raise FileNotFoundError(f"Image resource not found: {path}")
     return tk.PhotoImage(file=str(path))
 
 

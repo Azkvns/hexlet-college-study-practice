@@ -7,8 +7,10 @@ from app import (
     FONT_TITLE,
     MAIN_TITLE,
     MainWindow,
+    RESOURCES_DIR,
     to_partner_card,
 )
+
 
 
 def test_main_window_title_and_style_constants():
@@ -87,3 +89,29 @@ def test_double_click_opens_card_with_partner_id():
         assert kwargs["partner_id"] == 17
         assert kwargs["connection_factory"] is window._connection_factory
         assert kwargs["on_saved"] is window.refresh_list
+
+
+def test_main_window_guards_missing_resource_paths():
+    """MainWindow must check path.exists() before PhotoImage / iconphoto / logo."""
+    import inspect
+
+    src = inspect.getsource(MainWindow.__init__)
+    assert "icon_path.exists()" in src
+    assert "logo_path.exists()" in src
+    assert "iconphoto" in src
+
+
+def test_load_photo_raises_clearly_when_missing(tmp_path):
+    from partner_cards import _load_photo
+
+    missing = tmp_path / "missing.png"
+    try:
+        _load_photo(missing)
+        assert False, "expected FileNotFoundError"
+    except FileNotFoundError as exc:
+        assert "missing.png" in str(exc)
+
+
+def test_nav_resources_png_restored():
+    assert (RESOURCES_DIR / "app_icon.png").is_file()
+    assert (RESOURCES_DIR / "logo.png").is_file()
