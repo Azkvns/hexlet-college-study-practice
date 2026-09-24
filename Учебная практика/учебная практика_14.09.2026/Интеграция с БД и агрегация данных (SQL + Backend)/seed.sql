@@ -65,13 +65,16 @@ WHERE NOT EXISTS (
     SELECT 1 FROM products WHERE product_code = 'DEMO-THRESHOLD'
 );
 
--- ТК «Быстрый Путь»: 9999 → 0%
+-- Пороги скидки поверх ETL: демо-qty + уже существующий SUM(quantity_shipped)
+-- по партнёру должны остаться в целевой полосе (<10k→0, 10k–49999→5,
+-- 50k–299999→10, ≥300k→15). ETL: Логистик 80, Петров 200, Быстрый Путь 150.
+-- ООО «СеверТранс»: ETL 0 + 9999 → 0%
 WITH new_order AS (
     INSERT INTO orders (partner_id, product_id, contract_number, contract_date, planned_quantity)
     SELECT p.partner_id, pr.product_id, 'DEMO-9999', CURRENT_DATE, 9999
     FROM partners AS p
     CROSS JOIN products AS pr
-    WHERE p.name IN ('ТК «Быстрый Путь»', E'ТК "Быстрый Путь"')
+    WHERE p.name = 'ООО «СеверТранс»'
       AND pr.product_code = 'DEMO-THRESHOLD'
       AND NOT EXISTS (SELECT 1 FROM orders WHERE contract_number = 'DEMO-9999')
     RETURNING order_id
@@ -87,7 +90,7 @@ SELECT ns.shipment_id, no.order_id, 9999
 FROM new_order AS no
 CROSS JOIN new_shipment AS ns;
 
--- ИП Петров А.В.: 10000 → 5%
+-- ИП Петров А.В.: ETL 200 + 10000 = 10200 → 5%
 WITH new_order AS (
     INSERT INTO orders (partner_id, product_id, contract_number, contract_date, planned_quantity)
     SELECT p.partner_id, pr.product_id, 'DEMO-10000', CURRENT_DATE, 10000
@@ -109,7 +112,7 @@ SELECT ns.shipment_id, no.order_id, 10000
 FROM new_order AS no
 CROSS JOIN new_shipment AS ns;
 
--- ООО «Логистик-Экспресс»: 50000 → 10%
+-- ООО «Логистик-Экспресс»: ETL 80 + 50000 = 50080 → 10%
 WITH new_order AS (
     INSERT INTO orders (partner_id, product_id, contract_number, contract_date, planned_quantity)
     SELECT p.partner_id, pr.product_id, 'DEMO-50000', CURRENT_DATE, 50000
@@ -131,7 +134,7 @@ SELECT ns.shipment_id, no.order_id, 50000
 FROM new_order AS no
 CROSS JOIN new_shipment AS ns;
 
--- ООО «Магистраль»: 300000 → 15%
+-- ООО «Магистраль»: ETL 0 + 300000 → 15%
 WITH new_order AS (
     INSERT INTO orders (partner_id, product_id, contract_number, contract_date, planned_quantity)
     SELECT p.partner_id, pr.product_id, 'DEMO-300000', CURRENT_DATE, 300000
@@ -152,5 +155,3 @@ INSERT INTO shipment_items (shipment_id, order_id, quantity_shipped)
 SELECT ns.shipment_id, no.order_id, 300000
 FROM new_order AS no
 CROSS JOIN new_shipment AS ns;
-
--- ООО «СеверТранс»: без отгрузок → 0% (партнёр уже добавлен выше).
