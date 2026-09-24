@@ -1,0 +1,6 @@
+order_id,partner_id,product_id,contract_number,contract_date,planned_quantity
+101,1,1,IMP-101,2026-03-01,50
+102,2,2,IMP-102,2026-03-15,200
+103,1,3,IMP-103,2026-03-20,30
+104,4,1,IMP-104,2026-03-22,10
+105,3,2,IMP-105,2026-03-25,150

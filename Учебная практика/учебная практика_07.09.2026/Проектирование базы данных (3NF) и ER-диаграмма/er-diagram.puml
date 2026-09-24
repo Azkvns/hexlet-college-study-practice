@@ -1,0 +1,73 @@
+@startuml er-diagram-supply
+' ER-диаграмма: Поставка товаров (3NF)
+' Нотация Chen/IE
+skinparam linetype ortho
+skinparam shadowing false
+skinparam defaultFontName "Arial"
+
+skinparam entity {
+  BackgroundColor #E8F4FD
+  BorderColor #2E86AB
+}
+
+skinparam relationship {
+  BackgroundColor #FFF8E7
+  BorderColor #C9A227
+}
+
+entity "Партнёр\n(partners)" as partners {
+  * **partner_id** : INTEGER <<PK>>
+  --
+  * name : VARCHAR(255) <<NN>>
+  * inn : VARCHAR(12) <<UK, NN>>
+  * email : VARCHAR(255) <<UK, NN>>
+  * address : VARCHAR(500) <<NN>>
+  * phone : VARCHAR(20) <<NN>>
+}
+
+entity "Товар\n(products)" as products {
+  * **product_id** : INTEGER <<PK>>
+  --
+  * product_code : VARCHAR(20) <<UK, NN>>
+  * name : VARCHAR(255) <<NN>>
+  * price : DECIMAL(10,2) <<NN>>
+}
+
+entity "Заказ\n(orders)" as orders {
+  * **order_id** : INTEGER <<PK>>
+  --
+  # partner_id : INTEGER <<FK, NN>>
+  # product_id : INTEGER <<FK, NN>>
+  * contract_number : VARCHAR(50) <<NN>>
+  * contract_date : DATE <<NN>>
+  * planned_quantity : INTEGER <<NN>>
+}
+
+entity "Отгрузка\n(shipments)" as shipments {
+  * **shipment_id** : INTEGER <<PK>>
+  --
+  * shipment_date : DATE <<NN>>
+}
+
+entity "Строка отгрузки\n(shipment_items)" as shipment_items {
+  * **shipment_item_id** : INTEGER <<PK>>
+  --
+  # shipment_id : INTEGER <<FK, NN>>
+  # order_id : INTEGER <<FK, NN>>
+  * quantity_shipped : INTEGER <<NN>>
+}
+
+partners ||--o{ orders : "размещает\n(1 : N)"
+products ||--o{ orders : "заказывается\n(1 : N)"
+orders ||--o{ shipment_items : "исполняется\n(1 : N)"
+shipments ||--o{ shipment_items : "содержит\n(1 : N)"
+
+note right of partners
+  inn и email — UNIQUE
+end note
+
+note bottom of shipment_items
+  M:N отгрузка ↔ заказ
+end note
+
+@enduml
