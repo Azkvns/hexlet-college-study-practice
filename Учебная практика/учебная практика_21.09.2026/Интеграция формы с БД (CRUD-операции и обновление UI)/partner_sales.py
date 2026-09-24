@@ -1,17 +1,6 @@
-import sys
-from pathlib import Path
-
 import psycopg2.extras
 
 from db import get_connection
-
-_DISCOUNT_DIR = (
-    Path(__file__).resolve().parent.parent
-    / "Разработка ядра бизнес-логики (Расчет скидки)"
-)
-if str(_DISCOUNT_DIR) not in sys.path:
-    sys.path.insert(0, str(_DISCOUNT_DIR))
-
 from discount import calculate_partner_discount
 
 _PARTNER_SALES_SQL = """

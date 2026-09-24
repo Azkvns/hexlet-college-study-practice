@@ -6,16 +6,16 @@ from pathlib import Path
 from tkinter import ttk
 
 _PRACTICE_ROOT = Path(__file__).resolve().parent.parent
-_EXCEPTIONS_DIR = _PRACTICE_ROOT / "Исключения и уведомления"
-_REPO_DIR = _PRACTICE_ROOT / "Интеграция формы с БД"
-_INTEGRATION_DIR = (
-    _PRACTICE_ROOT / "Интеграция с БД и агрегация данных (SQL + Backend)"
+_EXCEPTIONS_DIR = (
+    _PRACTICE_ROOT
+    / "Обработка исключений и интерактивные уведомления (UX／UI)"
 )
-_UI_DIR = (
-    _PRACTICE_ROOT / "Разработка интерфейса (UI) по руководству по стилю"
+_REPO_DIR = (
+    _PRACTICE_ROOT / "Интеграция формы с БД (CRUD-операции и обновление UI)"
 )
+_NAV_DIR = _PRACTICE_ROOT / "Многооконная архитектура и навигация"
 
-for _path in (_EXCEPTIONS_DIR, _REPO_DIR, _INTEGRATION_DIR):
+for _path in (_EXCEPTIONS_DIR, _REPO_DIR):
     if str(_path) not in sys.path:
         sys.path.insert(0, str(_path))
 
@@ -121,7 +121,7 @@ class PartnerEditWindow(tk.Toplevel):
         self.title(partner_edit_title(partner_id))
         self.configure(bg=BG_COLOR)
 
-        icon_path = _UI_DIR / "resources" / "app_icon.png"
+        icon_path = _NAV_DIR / "resources" / "app_icon.png"
         if icon_path.exists():
             self._app_icon = tk.PhotoImage(file=str(icon_path))
             self.iconphoto(True, self._app_icon)

@@ -1,21 +1,23 @@
 from __future__ import annotations
 
-import importlib.util
 import sys
 import tkinter as tk
 from pathlib import Path
 from typing import Any, Callable
 
+from partner_cards import _load_photo, create_partner_card
+
 _PRACTICE_ROOT = Path(__file__).resolve().parent.parent
-_UI_DIR = (
-    _PRACTICE_ROOT / "Разработка интерфейса (UI) по руководству по стилю"
-)
-_FORM_DIR = _PRACTICE_ROOT / "Форма добавления и редактирования партнёра"
+_APP_DIR = Path(__file__).resolve().parent
+_FORM_DIR = _PRACTICE_ROOT / "Разработка формы добавления／редактирования партнера"
 _INTEGRATION_DIR = (
-    _PRACTICE_ROOT / "Интеграция с БД и агрегация данных (SQL + Backend)"
+    _PRACTICE_ROOT / "Интеграция формы с БД (CRUD-операции и обновление UI)"
 )
-_EXCEPTIONS_DIR = _PRACTICE_ROOT / "Исключения и уведомления"
-RESOURCES_DIR = _UI_DIR / "resources"
+_EXCEPTIONS_DIR = (
+    _PRACTICE_ROOT
+    / "Обработка исключений и интерактивные уведомления (UX／UI)"
+)
+RESOURCES_DIR = _APP_DIR / "resources"
 
 MAIN_TITLE = "CRM: Реестр партнёров"
 ADD_PARTNER_BUTTON_TEXT = "Добавить партнёра"
@@ -50,17 +52,6 @@ def to_partner_card(row: dict[str, Any]) -> PartnerCard:
         "total_quantity": total_quantity,
         "discount_percent": int(discount),
     }
-
-
-def _load_ui_module():
-    if str(_UI_DIR) not in sys.path:
-        sys.path.insert(0, str(_UI_DIR))
-    spec = importlib.util.spec_from_file_location("crm_ui_main_21", _UI_DIR / "main.py")
-    if spec is None or spec.loader is None:
-        raise ImportError("Cannot load UI main module")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
 
 
 def _ensure_form_import() -> None:
@@ -99,12 +90,11 @@ class MainWindow(tk.Tk):
         self.title(MAIN_TITLE)
         self.configure(bg=BG_COLOR)
 
-        self._ui = _load_ui_module()
         icon_path = RESOURCES_DIR / "app_icon.png"
         logo_path = RESOURCES_DIR / "logo.png"
-        self._app_icon = self._ui._load_photo(icon_path)
+        self._app_icon = _load_photo(icon_path)
         self.iconphoto(True, self._app_icon)
-        self._logo = self._ui._load_photo(logo_path)
+        self._logo = _load_photo(logo_path)
 
         header = tk.Frame(self, bg=BG_COLOR)
         header.pack(fill="x", padx=16, pady=(16, 8))
@@ -172,7 +162,7 @@ class MainWindow(tk.Tk):
             ).pack(anchor="w")
         else:
             for index, partner in enumerate(partners):
-                card = self._ui.create_partner_card(self._list_inner, partner)
+                card = create_partner_card(self._list_inner, partner)
                 bottom_gap = CARD_GAP if index < len(partners) - 1 else 0
                 card.pack(fill="x", expand=False, pady=(0, bottom_gap))
                 partner_id = partner.get("partner_id")
