@@ -85,6 +85,37 @@ def test_double_click_opens_card_with_partner_id():
         assert kwargs["on_saved"] is window.refresh_list
 
 
+def test_open_history_without_selection_shows_error():
+    window = _fake_main_window()
+    window._selected_partner_id = None
+    window._selected_partner_name = None
+    with (
+        patch("app.show_error_dialog") as error_dialog,
+        patch("app.PartnerHistoryWindow") as history_window,
+    ):
+        MainWindow._open_history(window)
+        error_dialog.assert_called_once()
+        history_window.assert_not_called()
+
+
+def test_open_history_with_selection_opens_history_window():
+    window = _fake_main_window()
+    window._selected_partner_id = 42
+    window._selected_partner_name = "ООО Тест"
+    with (
+        patch("app.show_error_dialog") as error_dialog,
+        patch("app.PartnerHistoryWindow") as history_window,
+    ):
+        MainWindow._open_history(window)
+        error_dialog.assert_not_called()
+        history_window.assert_called_once()
+        args, kwargs = history_window.call_args
+        assert args[0] is window
+        assert kwargs["partner_id"] == 42
+        assert kwargs["partner_name"] == "ООО Тест"
+        assert kwargs["connection_factory"] is window._connection_factory
+
+
 def test_main_window_guards_missing_resource_paths():
     """MainWindow must check path.exists() before PhotoImage / iconphoto / logo."""
     import inspect

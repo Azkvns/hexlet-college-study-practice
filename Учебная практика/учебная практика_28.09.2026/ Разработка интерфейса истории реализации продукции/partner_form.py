@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import tkinter as tk
+from pathlib import Path
 from tkinter import ttk
 
 from dialogs import (
@@ -105,7 +106,7 @@ class PartnerEditWindow(tk.Toplevel):
         self.title(partner_edit_title(partner_id))
         self.configure(bg=BG_COLOR)
 
-        icon_path = _NAV_DIR / "resources" / "app_icon.png"
+        icon_path = Path(__file__).resolve().parent / "app_icon.png"
         if icon_path.exists():
             self._app_icon = tk.PhotoImage(file=str(icon_path))
             self.iconphoto(True, self._app_icon)
