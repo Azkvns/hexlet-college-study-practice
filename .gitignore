@@ -2,3 +2,6 @@
 .worktrees/
 .superpowers/
 spec.md
+__pycache__/
+*.pyc
+.pytest_cache/
