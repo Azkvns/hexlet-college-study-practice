@@ -22,6 +22,15 @@ if str(_INTEGRATION_DIR) not in sys.path:
 
 from material_form import MaterialCalculatorWindow
 
+_AUDIT_DIR = (
+    _PRACTICE_ROOT
+    / "Модульное тестирование (Unit Testing) и аудит безопасности"
+)
+if str(_AUDIT_DIR) not in sys.path:
+    sys.path.insert(0, str(_AUDIT_DIR))
+
+from error_log import DEFAULT_LOG_PATH, log_error
+
 RESOURCES_DIR = _APP_DIR
 
 MAIN_TITLE = "CRM: Реестр партнёров"
@@ -150,10 +159,9 @@ class MainWindow(tk.Tk):
         try:
             partners = load_partner_cards(self._fetcher)
         except Exception as exc:
-            show_error_dialog(
-                f"Не удалось загрузить список партнёров:\n{exc}",
-                parent=self,
-            )
+            message = f"Не удалось загрузить список партнёров:\n{exc}"
+            log_error(message, DEFAULT_LOG_PATH)
+            show_error_dialog(message, parent=self)
             partners = []
 
         if not partners:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
@@ -15,6 +16,15 @@ from partner_repository import (
     update_partner,
 )
 from validation import validate_partner
+
+_AUDIT_DIR = (
+    Path(__file__).resolve().parent.parent
+    / "Модульное тестирование (Unit Testing) и аудит безопасности"
+)
+if str(_AUDIT_DIR) not in sys.path:
+    sys.path.insert(0, str(_AUDIT_DIR))
+
+from error_log import DEFAULT_LOG_PATH, log_error
 
 BG_COLOR = "#FFFFFF"
 FG_COLOR = "#000000"
@@ -303,7 +313,9 @@ class PartnerEditWindow(tk.Toplevel):
             finally:
                 connection.close()
         except Exception as exc:
-            show_error_dialog(str(exc), parent=self)
+            message = str(exc)
+            log_error(message, DEFAULT_LOG_PATH)
+            show_error_dialog(message, parent=self)
             return
         show_success_dialog(parent=self)
         self._initial_values = self._current_values()

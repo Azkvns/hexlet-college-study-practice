@@ -23,6 +23,10 @@ FG_COLOR = "#000000"
 FONT_TITLE = ("Arial", 11)
 FONT_DETAILS = ("Arial", 9)
 
+COLUMN_PRODUCT = "Наименование продукции"
+COLUMN_QUANTITY = "Количество (шт.)"
+COLUMN_DATE = "Дата продажи"
+
 HISTORY_SQL = """
 SELECT
     pr.name AS product_name,
@@ -56,11 +60,23 @@ class PartnerHistoryWindow(tk.Toplevel):
         self.partner_id = partner_id
         self.title(history_title(partner_name))
         self.configure(bg=BG_COLOR)
+
+        icon_path = Path(__file__).resolve().parent / "app_icon.png"
+        if icon_path.exists():
+            self._app_icon = tk.PhotoImage(file=str(icon_path))
+            self.iconphoto(True, self._app_icon)
+
         self._build(connection_factory)
 
     def _build(self, connection_factory) -> None:
         header = tk.Frame(self, bg=BG_COLOR)
         header.pack(fill="x", padx=16, pady=16)
+
+        logo_path = Path(__file__).resolve().parent / "logo.png"
+        if logo_path.exists():
+            self._logo = tk.PhotoImage(file=str(logo_path))
+            tk.Label(header, image=self._logo, bg=BG_COLOR).pack(side="left")
+
         tk.Label(
             header,
             text=self.title(),
@@ -76,9 +92,9 @@ class PartnerHistoryWindow(tk.Toplevel):
         ).pack(side="right")
         columns = ("product_name", "quantity", "sale_date")
         table = ttk.Treeview(self, columns=columns, show="headings", height=12)
-        table.heading("product_name", text="Наименование продукции")
-        table.heading("quantity", text="Количество, шт.")
-        table.heading("sale_date", text="Дата продажи")
+        table.heading("product_name", text=COLUMN_PRODUCT)
+        table.heading("quantity", text=COLUMN_QUANTITY)
+        table.heading("sale_date", text=COLUMN_DATE)
         table.pack(fill="both", expand=True, padx=16, pady=(0, 16))
         self._fill(table, connection_factory)
 

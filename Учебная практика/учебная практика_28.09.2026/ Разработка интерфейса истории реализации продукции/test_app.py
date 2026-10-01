@@ -140,3 +140,22 @@ def test_load_photo_raises_clearly_when_missing(tmp_path):
 def test_nav_resources_png_restored():
     assert (RESOURCES_DIR / "app_icon.png").is_file()
     assert (RESOURCES_DIR / "logo.png").is_file()
+
+
+def test_refresh_list_logs_errors_before_dialog():
+    """MainWindow.refresh_list must call log_error before show_error_dialog."""
+    import inspect
+
+    src = inspect.getsource(MainWindow.refresh_list)
+    assert "log_error" in src
+    assert "Не удалось загрузить список партнёров:" in src
+
+
+def test_partner_edit_save_logs_errors_before_dialog():
+    """PartnerEditWindow._on_save must call log_error before show_error_dialog."""
+    import inspect
+
+    from partner_form import PartnerEditWindow
+
+    src = inspect.getsource(PartnerEditWindow._on_save)
+    assert "log_error" in src

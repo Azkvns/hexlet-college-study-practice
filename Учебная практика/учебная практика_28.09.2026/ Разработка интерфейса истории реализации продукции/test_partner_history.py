@@ -1,4 +1,20 @@
-from partner_history import HISTORY_SQL, history_title, list_partner_sales
+import inspect
+
+from partner_history import (
+    COLUMN_DATE,
+    COLUMN_PRODUCT,
+    COLUMN_QUANTITY,
+    HISTORY_SQL,
+    PartnerHistoryWindow,
+    history_title,
+    list_partner_sales,
+)
+
+
+def test_history_column_titles():
+    assert COLUMN_PRODUCT == "Наименование продукции"
+    assert COLUMN_QUANTITY == "Количество (шт.)"
+    assert COLUMN_DATE == "Дата продажи"
 
 
 def test_history_title_contains_partner_name():
@@ -44,6 +60,16 @@ class _Connection:
 
     def cursor(self, cursor_factory=None):
         return self.cursor_obj
+
+
+def test_history_window_has_icon_and_logo():
+    """PartnerHistoryWindow must guard resource paths like MainWindow."""
+    init_src = inspect.getsource(PartnerHistoryWindow.__init__)
+    build_src = inspect.getsource(PartnerHistoryWindow._build)
+    assert "icon_path.exists()" in init_src
+    assert "iconphoto" in init_src
+    assert "logo.png" in build_src
+    assert "logo_path.exists()" in build_src
 
 
 def test_list_partner_sales_passes_partner_id():
