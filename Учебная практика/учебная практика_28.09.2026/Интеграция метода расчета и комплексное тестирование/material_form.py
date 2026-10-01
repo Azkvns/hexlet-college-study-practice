@@ -12,12 +12,19 @@ _HISTORY_DIR = (
     _PRACTICE_ROOT
     / " Разработка интерфейса истории реализации продукции"
 )
+_AUDIT_DIR = (
+    _PRACTICE_ROOT
+    / "Модульное тестирование (Unit Testing) и аудит безопасности"
+)
 if str(_CORE_DIR) not in sys.path:
     sys.path.insert(0, str(_CORE_DIR))
 if str(_HISTORY_DIR) not in sys.path:
     sys.path.insert(0, str(_HISTORY_DIR))
+if str(_AUDIT_DIR) not in sys.path:
+    sys.path.insert(0, str(_AUDIT_DIR))
 
 from dialogs import show_error_dialog
+from error_log import DEFAULT_LOG_PATH, log_error
 from material_calculator import calculate_material_amount
 from material_catalog import DbMaterialCatalog, MemoryMaterialCatalog
 
@@ -191,9 +198,9 @@ class MaterialCalculatorWindow(tk.Toplevel):
                 catalog,
             )
         except Exception as exc:
-            self._show_error(
-                f"Не удалось рассчитать расход материалов:\n{exc}"
-            )
+            message = f"Не удалось рассчитать расход материалов:\n{exc}"
+            log_error(message, DEFAULT_LOG_PATH)
+            self._show_error(message)
             return
         finally:
             if connection is not None:

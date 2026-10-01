@@ -1,11 +1,22 @@
 from __future__ import annotations
 
+import sys
 import tkinter as tk
+from pathlib import Path
 from tkinter import ttk
 
 import psycopg2.extras
 
 from dialogs import show_error_dialog
+
+_AUDIT_DIR = (
+    Path(__file__).resolve().parent.parent
+    / "Модульное тестирование (Unit Testing) и аудит безопасности"
+)
+if str(_AUDIT_DIR) not in sys.path:
+    sys.path.insert(0, str(_AUDIT_DIR))
+
+from error_log import DEFAULT_LOG_PATH, log_error
 
 BG_COLOR = "#FFFFFF"
 FG_COLOR = "#000000"
@@ -80,10 +91,9 @@ class PartnerHistoryWindow(tk.Toplevel):
             connection = connection_factory()
             rows = list_partner_sales(self.partner_id, connection)
         except Exception as exc:
-            show_error_dialog(
-                f"Не удалось загрузить историю продаж:\n{exc}",
-                parent=self,
-            )
+            message = f"Не удалось загрузить историю продаж:\n{exc}"
+            log_error(message, DEFAULT_LOG_PATH)
+            show_error_dialog(message, parent=self)
             return
         finally:
             if connection is not None:
