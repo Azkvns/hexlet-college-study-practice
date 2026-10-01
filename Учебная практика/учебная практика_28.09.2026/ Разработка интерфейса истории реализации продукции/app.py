@@ -1,0 +1,212 @@
+from __future__ import annotations
+
+import tkinter as tk
+from pathlib import Path
+from typing import Any, Callable
+
+from dialogs import show_error_dialog
+from partner_cards import _load_photo, create_partner_card
+from partner_form import PartnerEditWindow
+from partner_history import PartnerHistoryWindow
+from partner_sales import list_partners_with_discount
+
+RESOURCES_DIR = Path(__file__).resolve().parent
+
+MAIN_TITLE = "CRM: Реестр партнёров"
+ADD_PARTNER_BUTTON_TEXT = "Добавить партнёра"
+HISTORY_BUTTON_TEXT = "История продаж"
+BG_COLOR = "#FFFFFF"
+FG_COLOR = "#000000"
+BORDER_COLOR = "#000000"
+FONT_TITLE = ("Arial", 11)
+FONT_DETAILS = ("Arial", 9)
+CARD_GAP = 20
+
+PartnerCard = dict[str, Any]
+Fetcher = Callable[[], list[dict[str, Any]]]
+
+
+def to_partner_card(row: dict[str, Any]) -> PartnerCard:
+    raw_qty = row.get("total_quantity")
+    total_quantity = 0 if raw_qty is None else int(raw_qty)
+    discount = row.get("discount_percent")
+    if discount is None:
+        discount = 0
+    director = row.get("director") or "Директор"
+    rating = row.get("rating")
+    if rating is None:
+        rating = 0
+    return {
+        "partner_id": row.get("partner_id"),
+        "partner_type": row.get("partner_type") or "Партнер",
+        "name": row["name"],
+        "director": director,
+        "phone": row.get("phone") or "",
+        "rating": int(rating),
+        "total_quantity": total_quantity,
+        "discount_percent": int(discount),
+    }
+
+
+def load_partner_cards(fetcher: Fetcher | None = None) -> list[PartnerCard]:
+    if fetcher is None:
+        fetcher = list_partners_with_discount
+    return [to_partner_card(row) for row in fetcher()]
+
+
+class MainWindow(tk.Tk):
+    def __init__(
+        self,
+        fetcher: Fetcher | None = None,
+        connection_factory=None,
+    ):
+        super().__init__()
+        self._fetcher = fetcher
+        self._connection_factory = connection_factory
+        self._selected_partner_id = None
+        self._selected_partner_name = None
+        self.title(MAIN_TITLE)
+        self.configure(bg=BG_COLOR)
+
+        icon_path = RESOURCES_DIR / "app_icon.png"
+        logo_path = RESOURCES_DIR / "logo.png"
+        if icon_path.exists():
+            self._app_icon = _load_photo(icon_path)
+            self.iconphoto(True, self._app_icon)
+        self._logo = _load_photo(logo_path) if logo_path.exists() else None
+
+        header = tk.Frame(self, bg=BG_COLOR)
+        header.pack(fill="x", padx=16, pady=(16, 8))
+
+        if self._logo is not None:
+            tk.Label(header, image=self._logo, bg=BG_COLOR).pack(side="left")
+        tk.Label(
+            header,
+            text=MAIN_TITLE,
+            font=FONT_TITLE,
+            fg=FG_COLOR,
+            bg=BG_COLOR,
+        ).pack(side="left", padx=(12, 0))
+
+        tk.Button(
+            header,
+            text=ADD_PARTNER_BUTTON_TEXT,
+            font=FONT_TITLE,
+            command=self._open_add_partner,
+        ).pack(side="right")
+        tk.Button(
+            header,
+            text=HISTORY_BUTTON_TEXT,
+            font=FONT_TITLE,
+            command=self._open_history,
+        ).pack(side="right", padx=(0, 8))
+
+        self._list_outer = tk.Frame(
+            self,
+            bg=BG_COLOR,
+            highlightbackground=BORDER_COLOR,
+            highlightthickness=1,
+        )
+        self._list_outer.pack(fill="both", expand=True, padx=16, pady=(0, 16))
+
+        self._list_inner = tk.Frame(self._list_outer, bg=BG_COLOR)
+        self._list_inner.pack(
+            fill="both",
+            expand=True,
+            anchor="n",
+            padx=CARD_GAP,
+            pady=CARD_GAP,
+        )
+
+        self.refresh_list()
+        self.update_idletasks()
+        self.minsize(480, max(self.winfo_reqheight(), 320))
+
+    def refresh_list(self) -> None:
+        self._selected_partner_id = None
+        self._selected_partner_name = None
+        for child in self._list_inner.winfo_children():
+            child.destroy()
+
+        try:
+            partners = load_partner_cards(self._fetcher)
+        except Exception as exc:
+            show_error_dialog(
+                f"Не удалось загрузить список партнёров:\n{exc}",
+                parent=self,
+            )
+            partners = []
+
+        if not partners:
+            tk.Label(
+                self._list_inner,
+                text="Нет данных для отображения.",
+                font=FONT_TITLE,
+                fg=FG_COLOR,
+                bg=BG_COLOR,
+            ).pack(anchor="w")
+        else:
+            for index, partner in enumerate(partners):
+                card = create_partner_card(self._list_inner, partner)
+                bottom_gap = CARD_GAP if index < len(partners) - 1 else 0
+                card.pack(fill="x", expand=False, pady=(0, bottom_gap))
+                partner_id = partner.get("partner_id")
+                partner_name = partner.get("name")
+                # partner_id передаётся в замыкание для выбора и двойного клика
+                self._bind_card_open(card, partner_id, partner_name)
+
+        tk.Frame(self._list_inner, bg=BG_COLOR, height=1).pack(
+            fill="both",
+            expand=True,
+        )
+
+    def _bind_card_open(self, widget: tk.Widget, partner_id, partner_name) -> None:
+        def open_handler(_event=None, pid=partner_id):
+            if pid is not None:
+                self._open_edit_partner(pid)
+
+        def select_handler(_event=None, pid=partner_id, pname=partner_name):
+            self._select_partner(pid, pname)
+
+        widget.bind("<Double-Button-1>", open_handler)
+        widget.bind("<Button-1>", select_handler)
+        for child in widget.winfo_children():
+            self._bind_card_open(child, partner_id, partner_name)
+
+    def _select_partner(self, partner_id, partner_name) -> None:
+        self._selected_partner_id = partner_id
+        self._selected_partner_name = partner_name
+
+    def _open_history(self) -> None:
+        if self._selected_partner_id is None:
+            show_error_dialog(
+                "Выберите партнёра в списке, затем нажмите «История продаж».",
+                parent=self,
+            )
+            return
+        # partner_id выбранной карточки уходит в окно истории
+        PartnerHistoryWindow(
+            self,
+            partner_id=self._selected_partner_id,
+            partner_name=self._selected_partner_name,
+            connection_factory=self._connection_factory,
+        )
+
+    def _open_add_partner(self) -> None:
+        self._open_edit_partner(None)
+
+    def _open_edit_partner(self, partner_id: int | None) -> None:
+        PartnerEditWindow(
+            self,
+            partner_id=partner_id,
+            connection_factory=self._connection_factory,
+            on_saved=self.refresh_list,
+        )
+
+
+def main() -> None:
+    MainWindow().mainloop()
+
+
+if __name__ == "__main__":
+    main()
