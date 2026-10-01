@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 import tkinter as tk
 from pathlib import Path
 from typing import Any, Callable
@@ -10,11 +11,23 @@ from partner_form import PartnerEditWindow
 from partner_history import PartnerHistoryWindow
 from partner_sales import list_partners_with_discount
 
-RESOURCES_DIR = Path(__file__).resolve().parent
+_APP_DIR = Path(__file__).resolve().parent
+_PRACTICE_ROOT = _APP_DIR.parent
+_INTEGRATION_DIR = (
+    _PRACTICE_ROOT
+    / "Интеграция метода расчета и комплексное тестирование"
+)
+if str(_INTEGRATION_DIR) not in sys.path:
+    sys.path.insert(0, str(_INTEGRATION_DIR))
+
+from material_form import MaterialCalculatorWindow
+
+RESOURCES_DIR = _APP_DIR
 
 MAIN_TITLE = "CRM: Реестр партнёров"
 ADD_PARTNER_BUTTON_TEXT = "Добавить партнёра"
 HISTORY_BUTTON_TEXT = "История продаж"
+MATERIALS_BUTTON_TEXT = "Расчёт материалов"
 BG_COLOR = "#FFFFFF"
 FG_COLOR = "#000000"
 BORDER_COLOR = "#000000"
@@ -99,6 +112,12 @@ class MainWindow(tk.Tk):
             text=HISTORY_BUTTON_TEXT,
             font=FONT_TITLE,
             command=self._open_history,
+        ).pack(side="right", padx=(0, 8))
+        tk.Button(
+            header,
+            text=MATERIALS_BUTTON_TEXT,
+            font=FONT_TITLE,
+            command=self._open_materials,
         ).pack(side="right", padx=(0, 8))
 
         self._list_outer = tk.Frame(
@@ -189,6 +208,12 @@ class MainWindow(tk.Tk):
             self,
             partner_id=self._selected_partner_id,
             partner_name=self._selected_partner_name,
+            connection_factory=self._connection_factory,
+        )
+
+    def _open_materials(self) -> None:
+        MaterialCalculatorWindow(
+            self,
             connection_factory=self._connection_factory,
         )
 
